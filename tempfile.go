@@ -59,3 +59,28 @@ func TempFile(dir, prefix string, suffix string) (f *os.File, err error) {
 	}
 	return
 }
+
+// TempPath is like TempFile only it returns a path that can be used
+// for a temporary file without actually creating it.
+func TempPath(dir, prefix string, suffix string) (name string, err error) {
+	if dir == "" {
+		dir = os.TempDir()
+	}
+
+	nconflict := 0
+	for i := 0; i < 10000; i++ {
+		name = filepath.Join(dir, prefix+nextSuffix()+suffix)
+		_, err = os.Stat(name)
+		if !os.IsNotExist(err) {
+			if nconflict++; nconflict > 10 {
+				randmu.Lock()
+				rand = reseed()
+				randmu.Unlock()
+			}
+			continue
+		}
+		err = nil
+		break
+	}
+	return
+}
